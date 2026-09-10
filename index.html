@@ -1250,19 +1250,23 @@
     return `<details class="perf-how">
       <summary>ℹ️ Comment est calculé l'indice 🏅 ?</summary>
       <div class="perf-how-body">
-        <p>L'indice résume le niveau d'un pilote <strong>dans cette catégorie</strong> en un nombre de 0 à 1000 (même formule que Stats Pilote, sans bonus/malus de niveau : seule la catégorie compte). Repères : <strong>~500</strong> = milieu, <strong>800+</strong> = parmi les meilleurs.</p>
+        <p>L'indice résume le niveau d'un pilote <strong>dans cette catégorie</strong> en un nombre de 0 à 1000 (même formule que Stats Pilote, sans coef de niveau : toutes les organisations valent ×1,0, seule la catégorie compte). Repères : <strong>~500</strong> = milieu, <strong>800+</strong> = parmi les meilleurs.</p>
         <p>Trois idées :</p>
         <ol>
           <li><strong>Les places, à contexte égal.</strong> Chaque course est notée selon le rang, ajusté par la taille du plateau (gagner à 30 vaut plus qu'à 8) et par sa force (battre des pilotes forts vaut plus). Un podium vaut nettement plus qu'une place en fond de top-20.</li>
           <li><strong>La manière.</strong> Léger bonus pour la régularité en manches et les finales atteintes ; sur les épreuves chronométrées, le meilleur temps (comparé à la catégorie du jour) compte pour environ un quart du score.</li>
-          <li><strong>La prudence.</strong> Peu de courses = indice tiré vers 500 — d'autant plus si les plateaux étaient petits. Un abandon n'est pas un zéro : pénalisé selon la phase atteinte (manches ≈ 250 … finale ≈ 700).</li>
+          <li><strong>La prudence.</strong> Avec peu de courses, l'indice est ramené vers 500 : chaque course apporte une « preuve » proportionnelle à son plateau (12 pilotes ≈ 1 preuve, un abandon ≈ 0,25), et il manque toujours 2 preuves à 500 dans la balance.</li>
         </ol>
         <details class="perf-how-detail">
-          <summary>Détail du calcul</summary>
+          <summary>Détail du calcul (tous les coefficients)</summary>
           <ul>
-            <li><strong>Rang</strong> — 1ᵉʳ d'un gros champ ≈ 980-1000, médiane ≈ 500.</li>
-            <li><strong>Constance</strong> — facteur ×0,97 à ×1,05 (top 4 en manches + finale atteinte).</li>
-            <li><strong>Indice du pilote</strong> — moyenne de ses indices annuels dans la catégorie.</li>
+            <li><strong>Rang</strong> — courbe 500 + 500·(z/√3)<sup>2,5</sup> au-dessus de la médiane (exposant 2,5 : l'écart se resserre en haut), linéaire en dessous. 1ᵉʳ d'un gros champ ≈ 980-1000, médiane = 500. Score borné entre 5 et 1000.</li>
+            <li><strong>Constance</strong> — facteur ×0,97 à ×1,05 : moitié régularité en manches (% de top-4), moitié finale atteinte (ou non).</li>
+            <li><strong>Chrono</strong> — sur épreuves chronométrées uniquement (≥3 temps dans la classe) : (score + 0,3 × chrono) / 1,3, le temps pèse donc ~23 %.</li>
+            <li><strong>Force du plateau</strong> — +0,3 × (force de la classe ce jour-là − médiane annuelle). En pratique ± quelques dizaines de points.</li>
+            <li><strong>Abandons (DNF/DNS/DSQ)</strong> — pas de zéro : 250 (manches), 400 (quart), 550 (demie) ou 700 (finale) selon la phase atteinte, et ça ne vaut que 0,25 preuve.</li>
+            <li><strong>Année</strong> — moyenne simple des courses, puis ramenée vers 500 selon la preuve totale : (moyenne × preuves + 500 × 2) / (preuves + 2).</li>
+            <li><strong>Indice du pilote</strong> — moyenne de ses indices annuels dans la catégorie, à égalité.</li>
           </ul>
         </details>
       </div>

@@ -44,3 +44,9 @@ test('clubs.json : copie conforme au canonique club_stats', () => {
 test('pied de page : Sqorz et JSTiming (données UEC utilisées ici)', () => {
   assert.ok(src.includes('>Sqorz</a> et <a href="https://www.jstiming.nl"'), 'double attribution');
 });
+
+test('aide indice : tous les coefficients cités (anti-dérive doc/code)', () => {
+  for (const coef of ['2,5', '0,97', '1,05', '0,3', '250', '400', '550', '700', 'preuves']) {
+    assert.ok(src.includes(coef), `coef cité : ${coef}`);
+  }
+});
