@@ -1,4 +1,6 @@
 <!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later
+     Copyright (c) 2026 ludovic.socie -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -63,8 +65,8 @@
   .donate-btn:active{transform:scale(.95)}
   .donate-icon{font-size:1.15rem;display:inline-flex;align-items:center}
   @media(max-width:520px){.donate-btn .donate-label{display:none}}
-  .hub-back{display:inline-block;margin-top:10px;font-size:12px;color:rgba(255,255,255,.65);text-decoration:none;letter-spacing:.1px}
-  .hub-back:hover{color:#fff}
+  .hub-back{display:inline-flex;align-items:center;gap:6px;margin-top:14px;color:#fff;font-size:13px;font-weight:600;text-decoration:none;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);padding:6px 12px;border-radius:99px}
+  .hub-back:hover{background:rgba(255,255,255,.28)}
   #retryBtn:not([hidden]){display:block;margin:8px auto 0;padding:6px 18px;background:var(--accent,#4e80ee);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer}
   #retryBtn:hover{opacity:.85}
   .progress{height:6px;background:var(--card-soft);border:1px solid var(--line);border-radius:99px;overflow:hidden;margin-top:10px}
@@ -266,8 +268,8 @@
   }
   .yf-btn:hover{border-color:var(--accent); color:var(--accent-hi)}
   .yf-btn.active{background:var(--accent); border-color:var(--accent); color:#fff}
-  .share-btn{background:transparent;border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;padding:6px 12px;font-size:0.82rem;cursor:pointer;transition:background .15s}
-  .share-btn:hover{background:rgba(255,255,255,0.15)}
+  
+  
 
   .empty-state{padding:36px; text-align:center; color:var(--muted); font-size:13px}
   .results-summary{font-size:12px; color:var(--muted); margin-bottom:10px}
@@ -427,9 +429,11 @@
         </span>
         Sqorz Category Stats
       </div>
-      <button id="shareBtn" class="share-btn" onclick="copyLink()">Copier le lien</button>
+      
+      <div style="display:flex; gap:8px; align-items:center">
       <a href="https://ko-fi.com/sqorz_tools" target="_blank" rel="noopener noreferrer" class="donate-btn" title="Soutenir le projet sur Ko-fi"><span class="donate-icon">☕</span><span class="donate-label">Soutenir</span></a>
       <button type="button" id="themeBtn" class="theme-btn" aria-label="Changer le thème" title="Changer le thème (auto / clair / sombre)"></button>
+      </div>
     </div>
     <a class="hub-back" id="hubBackLink" href="#" aria-label="Retour au Sqorz Hub">← Sqorz Hub</a>
     <h1>Sqorz · Stats Catégorie</h1>
@@ -509,7 +513,7 @@
   // Socle partagé (common.js) : utils, expansion d'index, chargeur à cache, indice de perf.
   const {
     norm, escape, humanError, zScore,
-    isFinalPhase, isMotoPhase, isNotTimedPhase, num, perfHasKnockout,
+    isFinalPhase, isMotoPhase, isTimeTrialPhase, isNotTimedPhase, num, perfHasKnockout,
     expandIndex, loadIndexCached, loadFieldStrength,
     PERF_DNF_SCORES, perfClamp, perfScoreRang, perfBestTime, perfChronoScore,
     perfConstance, perfCoefConstance, perfDeepestPhase, perfShrinkMean, applyFieldScore, perfWeight,
@@ -1054,9 +1058,10 @@
         s.pctCount++;
       }
       const details = c.competitorRankDetails || [];
-      const finalPh = details.find(isFinalPhase);
+      // Hors contre-la-montre (runs en solo, result=1 partout : ni finale ni qualif).
+      const finalPh = details.find(d => isFinalPhase(d) && !isTimeTrialPhase(d));
       if (finalPh && finalPh.result != null) s.finalsReached++;
-      if (details.some(d => isKnockoutPhase(d) && d.result != null)) s.qualifReached++;
+      if (details.some(d => isKnockoutPhase(d) && !isTimeTrialPhase(d) && d.result != null)) s.qualifReached++;
       for (const d of details) {
         if (isMotoPhase(d) && d.result != null) {
           s.manchesRaced++;
@@ -1731,8 +1736,6 @@
     btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
   })();
 </script>
-<script>
-function copyLink(){const btn=document.getElementById('shareBtn');const url=window.location.href;const restore=()=>{btn.textContent='Copier le lien'};if(navigator.clipboard){navigator.clipboard.writeText(url).then(()=>{btn.textContent='✓ Lien copié !';setTimeout(restore,2000)})}else{const el=document.createElement('textarea');el.value=url;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);btn.textContent='✓ Lien copié !';setTimeout(restore,2000)}}
-</script>
+
 </body>
 </html>
