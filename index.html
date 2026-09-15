@@ -6,14 +6,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%234a7ab5'/><text x='16' y='23' font-family='system-ui' font-size='20' font-weight='800' fill='white' text-anchor='middle'>S</text></svg>">
-<title>Stats par Catégorie BMX — Sqorz Hub</title>
+<title>BMX-Race · Stats Catégorie</title>
 <meta name="description" content="Classements et statistiques BMX Race par catégorie d'âge : évolutions, podiums et comparatifs entre organisations.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://ludsoc.github.io/sqorz-category/">
-<meta property="og:title" content="Stats par Catégorie BMX — Sqorz Hub">
+<meta property="og:url" content="https://ludsoc.github.io/bmx-race-category/">
+<meta property="og:title" content="BMX-Race · Stats Catégorie">
 <meta property="og:description" content="Classements et statistiques BMX Race par catégorie d'âge : évolutions, podiums et comparatifs entre organisations.">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Stats par Catégorie BMX — Sqorz Hub">
+<meta name="twitter:title" content="BMX-Race · Stats Catégorie">
 <meta name="twitter:description" content="Classements et statistiques BMX Race par catégorie d'âge : évolutions, podiums et comparatifs entre organisations.">
 <script>
   (() => {
@@ -427,7 +427,7 @@
             <line x1="2" y1="22" x2="22" y2="22"/>
           </svg>
         </span>
-        Sqorz Category Stats
+        BMX-Race Category
       </div>
       
       <div style="display:flex; gap:8px; align-items:center">
@@ -435,8 +435,8 @@
       <button type="button" id="themeBtn" class="theme-btn" aria-label="Changer le thème" title="Changer le thème (auto / clair / sombre)"></button>
       </div>
     </div>
-    <a class="hub-back" id="hubBackLink" href="#" aria-label="Retour au Sqorz Hub">← Sqorz Hub</a>
-    <h1>Sqorz · Stats Catégorie</h1>
+    <a class="hub-back" id="hubBackLink" href="#" aria-label="Retour au BMX-Race Hub">← BMX-Race Hub</a>
+    <h1>BMX-Race · Stats Catégorie</h1>
     <p>Comparez les performances de tous les pilotes d'une catégorie sur une saison — victoires, podiums, régularité — en agrégeant les résultats de toutes les organisations qui courent cette catégorie.</p>
   </div>
 </div>
@@ -505,11 +505,11 @@
   </div>
 </div>
 
-<script src="https://ludsoc.github.io/sqorz-stats/common.js"></script>
-<script>if (!window.SqorzCommon) document.write('<script src="../sqorz_stats/common.js"><\/script>');</script>
+<script src="https://ludsoc.github.io/bmx-race-stats/common.js"></script>
+<script>if (!window.BmxCommon) document.write('<script src="../sqorz_stats/common.js"><\/script>');</script>
 <script>
 (() => {
-  if (!window.SqorzCommon) throw new Error('[category] common.js introuvable — recharge la page.');
+  if (!window.BmxCommon) throw new Error('[category] common.js introuvable — recharge la page.');
   // Socle partagé (common.js) : utils, expansion d'index, chargeur à cache, indice de perf.
   const {
     norm, escape, humanError, zScore,
@@ -518,7 +518,7 @@
     PERF_DNF_SCORES, perfClamp, perfScoreRang, perfBestTime, perfChronoScore,
     perfConstance, perfCoefConstance, perfDeepestPhase, perfShrinkMean, applyFieldScore, perfWeight,
     renderDataDates, setTextStatus, setBarProgress,
-  } = window.SqorzCommon;
+  } = window.BmxCommon;
   // --- Noms complets des clubs (clubs.json, cf. club_stats/tools/clubs/README.md) ---
   // Normalisation compatible club_stats (conserve '-' et la ponctuation : JOUE-T ≠ JOUE T).
   const normClubCode = s => (s || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -543,14 +543,14 @@
   }
   const INDEX_SOURCES = [
     'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/pilots-index.json',
-    'https://github.com/LudSoc/sqorz-stats/releases/latest/download/pilots-index.json',
-    'https://raw.githubusercontent.com/LudSoc/sqorz-stats/main/pilots-index.json',
+    'https://github.com/LudSoc/bmx-race-stats/releases/latest/download/pilots-index.json',
+    'https://raw.githubusercontent.com/LudSoc/bmx-race-stats/main/pilots-index.json',
   ];
   // Index UEC (JSTiming — Coupe/Championnats d'Europe) : mêmes sources, optionnel.
   const UEC_INDEX_SOURCES = [
     'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/uec-index.json',
-    'https://github.com/LudSoc/sqorz-stats/releases/latest/download/uec-index.json',
-    'https://raw.githubusercontent.com/LudSoc/sqorz-stats/main/uec-index.json',
+    'https://github.com/LudSoc/bmx-race-stats/releases/latest/download/uec-index.json',
+    'https://raw.githubusercontent.com/LudSoc/bmx-race-stats/main/uec-index.json',
   ];
 
   // Une « catégorie » = le nom exact de la classe (Sqorz, ou UEC namespacée `uec:`).
@@ -587,12 +587,12 @@
     setBarProgress(done, total);
   }
 
-  // --- Cache client piloté par meta.json (sha256), via SqorzCommon.loadIndexCached ---
-  const INDEX_CACHE_KEY = 'https://sqorz.local/cache/pilots-index.json';
-  const INDEX_META_URL = 'https://ludsoc.github.io/sqorz-stats/pilots-index.meta.json';
+  // --- Cache client piloté par meta.json (sha256), via BmxCommon.loadIndexCached ---
+  const INDEX_CACHE_KEY = 'https://bmx-race.local/cache/pilots-index.json';
+  const INDEX_META_URL = 'https://ludsoc.github.io/bmx-race-stats/pilots-index.meta.json';
   // Index UEC : même cache (clé dédiée), piloté par son propre meta.json.
-  const UEC_INDEX_CACHE_KEY = 'https://sqorz.local/cache/uec-index.json';
-  const UEC_INDEX_META_URL = 'https://ludsoc.github.io/sqorz-stats/uec-index.meta.json';
+  const UEC_INDEX_CACHE_KEY = 'https://bmx-race.local/cache/uec-index.json';
+  const UEC_INDEX_META_URL = 'https://ludsoc.github.io/bmx-race-stats/uec-index.meta.json';
 
   // Tous les événements FR + UEC.
   function allIndexedEvents() {
@@ -728,15 +728,15 @@
   async function loadFieldsInBackground() {
     const [frF, uecF] = await Promise.all([
       loadFieldStrength({
-        metaUrl: 'https://ludsoc.github.io/sqorz-stats/field-strength-fr.meta.json',
+        metaUrl: 'https://ludsoc.github.io/bmx-race-stats/field-strength-fr.meta.json',
         url: 'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/field-strength-fr.json',
-        cacheKey: 'https://sqorz.local/cache/field-strength-fr.json',
+        cacheKey: 'https://bmx-race.local/cache/field-strength-fr.json',
         tag: '[category:fs-fr]',
       }),
       loadFieldStrength({
-        metaUrl: 'https://ludsoc.github.io/sqorz-stats/field-strength-uec.meta.json',
+        metaUrl: 'https://ludsoc.github.io/bmx-race-stats/field-strength-uec.meta.json',
         url: 'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/field-strength-uec.json',
-        cacheKey: 'https://sqorz.local/cache/field-strength-uec.json',
+        cacheKey: 'https://bmx-race.local/cache/field-strength-uec.json',
         tag: '[category:fs-uec]',
       }),
     ]);
@@ -1013,7 +1013,7 @@
     if (currentRows.length > 0) debouncedSearch();
   });
 
-  // --- Stats computation (from test_sqorz ; isFinalPhase/isMotoPhase via SqorzCommon) ---
+  // --- Stats computation (from test_sqorz ; isFinalPhase/isMotoPhase via BmxCommon) ---
   function isSemiPhase(d) {
     return /semi/i.test(d.phaseName || '');
   }
@@ -1077,7 +1077,7 @@
     return s;
   }
 
-  // --- Indice de performance (helpers purs via SqorzCommon ; ici : année + engagement) ---
+  // --- Indice de performance (helpers purs via BmxCommon ; ici : année + engagement) ---
   const perfYearOf = d => (d || '').slice(0, 4) || '????';
 
   // Retrouve la classe complète (tous les compétiteurs) dans l'index en mémoire, pour
@@ -1127,7 +1127,7 @@
     return { raw, nDnf: 0, year };
   }
 
-  // Indice d'un pilote = moyenne des indices annuels (comme sqorz_stats : une saison
+  // Indice d'un pilote = moyenne des indices annuels (comme bmx-race-stats : une saison
   // chargée ne pèse pas plus qu'une autre). Ici coef de niveau = 1 (toutes orgas confondues).
   function computePerfIndex(matches) {
     const byYear = new Map();
@@ -1249,7 +1249,7 @@
     </div>`;
   }
 
-  // Encadré « comment est calculé l'indice 🏅 » (même formule que sqorz_stats,
+  // Encadré « comment est calculé l'indice 🏅 » (même formule que bmx-race-stats,
   // sans coef de niveau : ici toutes les orgas valent 1).
   function renderPerfHow() {
     return `<details class="perf-how">
@@ -1720,7 +1720,7 @@
   (() => {
     const base = window.location.protocol === 'file:'
       ? '../sqorz_hub/index.html'
-      : 'https://ludsoc.github.io/sqorz-hub/';
+      : 'https://ludsoc.github.io/bmx-race-hub/';
     document.getElementById('hubBackLink').href = base;
   })();
 })();

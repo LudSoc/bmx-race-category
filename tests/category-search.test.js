@@ -8,7 +8,7 @@ const path = require('path');
 
 const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const commonSrc = fs.readFileSync(path.join(__dirname, '..', '..', 'sqorz_stats', 'common.js'), 'utf8');
-const SC = new Function('window', commonSrc + '\nreturn window.SqorzCommon;')({});
+const SC = new Function('window', commonSrc + '\nreturn window.BmxCommon;')({});
 function block(start, indent = '  ') {
   const i = src.indexOf(start);
   if (i < 0) throw new Error('marqueur introuvable : ' + start);

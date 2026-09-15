@@ -2,7 +2,7 @@
 
 **[🇬🇧 English](#english) · [🇫🇷 Français](#français)**
 
-Part of [Sqorz Hub](https://ludsoc.github.io/sqorz-hub/) — BMX Race statistics tools.
+Part of [Sqorz Hub](https://ludsoc.github.io/bmx-race-hub/) — BMX Race statistics tools.
 
 ---
 
@@ -22,11 +22,11 @@ Browse BMX Race rankings and statistics by age category across multiple organiza
 
 ### Live
 
-**[ludsoc.github.io/sqorz-category](https://ludsoc.github.io/sqorz-category/)**
+**[ludsoc.github.io/bmx-race-category](https://ludsoc.github.io/bmx-race-category/)**
 
 ### Tech
 
-HTML/CSS/JS, no framework, no build step. Shared core (`SqorzCommon`) loaded from sqorz-stats. Data from the public [Sqorz API](https://our.sqorz.com) + UEC European races (JSTiming).
+HTML/CSS/JS, no framework, no build step. Shared core (`BmxCommon`) loaded from bmx-race-stats. Data from the public [Sqorz API](https://our.sqorz.com) + UEC European races (JSTiming).
 
 > Community project, not affiliated with Sqorz.
 
@@ -49,11 +49,11 @@ Consultez les classements et statistiques BMX Race par catégorie d'âge, sur pl
 
 ### Accès
 
-**[ludsoc.github.io/sqorz-category](https://ludsoc.github.io/sqorz-category/)**
+**[ludsoc.github.io/bmx-race-category](https://ludsoc.github.io/bmx-race-category/)**
 
 ### Technique
 
-HTML/CSS/JS, sans framework, sans étape de build. Socle partagé (`SqorzCommon`) chargé depuis sqorz-stats. Données issues de l'[API publique Sqorz](https://our.sqorz.com) + courses européennes UEC (JSTiming).
+HTML/CSS/JS, sans framework, sans étape de build. Socle partagé (`BmxCommon`) chargé depuis bmx-race-stats. Données issues de l'[API publique Sqorz](https://our.sqorz.com) + courses européennes UEC (JSTiming).
 
 > Projet communautaire non officiel, non affilié à Sqorz.
 
