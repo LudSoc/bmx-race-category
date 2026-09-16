@@ -539,10 +539,11 @@
   if (!window.BmxCommon) throw new Error('[category] common.js introuvable — recharge la page.');
   // Socle partagé (common.js) : utils, expansion d'index, chargeur à cache, indice de perf.
   const {
-    norm, escape, humanError, zScore,
-    isFinalPhase, isMotoPhase, isTimeTrialPhase, isNotTimedPhase, num, perfHasKnockout,
-    expandIndex, loadIndexCached, loadFieldStrength,
-    PERF_DNF_SCORES, PERF_CHRONO_W, perfClamp, perfScoreRang, perfBestTime, perfChronoScore,
+    norm, escape, humanError,
+    isFinalPhase, isMotoPhase, isTimeTrialPhase,
+    num,
+    loadIndexCached, loadFieldStrength,
+    PERF_DNF_SCORES, PERF_CHRONO_W, perfScoreRang, perfBestTime, perfChronoScore,
     perfConstance, perfCoefConstance, perfDeepestPhase, perfShrinkMean, applyFieldScore, perfWeight,
     renderDataDates, setTextStatus, setBarProgress,
   } = window.BmxCommon;
@@ -919,13 +920,6 @@
   let pilotSearchPos = 0;    // position dans les matchs (navigation Entrée/‹ ›)
   let pilotSearchCentered = false; // vue centrée sur le match courant (Entrée valide d'abord)
 
-  // Tous les mots doivent être présents, dans n'importe quel ordre
-  // (ex. « dupont jean » trouve « Jean Dupont »). Testé.
-  function matchTokens(key, query) {
-    const tokens = norm(query).split(' ').filter(Boolean);
-    if (!tokens.length) return false;
-    return tokens.every(t => (key || '').includes(t));
-  }
   // Position circulaire dans les matchs (navigation). Testé.
   function wrapSearchPos(pos, n) {
     if (!n) return 0;
@@ -1153,9 +1147,6 @@
   });
 
   // --- Stats computation (from test_sqorz ; isFinalPhase/isMotoPhase via BmxCommon) ---
-  function isSemiPhase(d) {
-    return /semi/i.test(d.phaseName || '');
-  }
   function isKnockoutPhase(d) {
     const n = (d.phaseName || '').toLowerCase();
     return (/final/.test(n) || /1\/\d+/.test(n)) && !/repech/.test(n);

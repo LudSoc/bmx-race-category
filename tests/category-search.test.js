@@ -17,29 +17,12 @@ function block(start, indent = '  ') {
   return src.slice(i, j + ('\n' + indent + '}\n').length);
 }
 const H = new Function('norm',
-  block('function matchTokens(key, query) {') + '\n' +
   block('function wrapSearchPos(pos, n) {') + '\n' +
   block('function stepSearchState(centered, pos, dir, n) {') + '\n' +
   'let currentYearFilter = "all";\n' +
   block('function renderYearFilterBar() {') +
-  '\nreturn { matchTokens, wrapSearchPos, stepSearchState, renderYearFilterBar, __setYF: (v) => { currentYearFilter = v; } };'
+  '\nreturn { wrapSearchPos, stepSearchState, renderYearFilterBar, __setYF: (v) => { currentYearFilter = v; } };'
 )(SC.norm);
-
-test('matchTokens : tous les mots, ordre indifférent, accents', () => {
-  assert.equal(H.matchTokens('jean dupont', 'dupont jean'), true);
-  assert.equal(H.matchTokens('jean dupont', 'dupont'), true);
-  assert.equal(H.matchTokens('jean dupont', 'jean dupont extra'), false);
-  assert.equal(H.matchTokens('eleonore martin', 'eleonore'), true);
-  assert.equal(H.matchTokens('jean dupont', ''), false);
-  assert.equal(H.matchTokens('jean dupont', '   '), false);
-  assert.equal(H.matchTokens('', 'dupont'), false);
-  assert.equal(H.matchTokens(null, 'dupont'), false);
-});
-
-test('matchTokens : sensible au mot complet partiel (préfixe OK)', () => {
-  assert.equal(H.matchTokens('jean dupont', 'dup'), true);
-  assert.equal(H.matchTokens('jean dupont', 'dupont jean-marie'), false);
-});
 
 test('wrapSearchPos : circulaire dans les deux sens', () => {
   assert.equal(H.wrapSearchPos(0, 5), 0);
