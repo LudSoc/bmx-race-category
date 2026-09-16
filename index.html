@@ -24,6 +24,18 @@
     if (saved) document.documentElement.dataset.themePref = saved;
   })();
 </script>
+<script>
+  // Localhost : purge d'éventuels service workers périmés qui cassent le
+  // chargement (respondWith(undefined) → ERR_FAILED sur common.js/theme.css).
+  if ('serviceWorker' in navigator && ['127.0.0.1', 'localhost', '::1'].includes(location.hostname)) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.getRegistrations().then(list => {
+        if (!list.length) return;
+        Promise.all(list.map(r => r.unregister())).then(() => location.reload());
+      });
+    });
+  }
+</script>
 <link rel="stylesheet" href="./theme.css">
 <style>
   *{box-sizing:border-box}
@@ -181,6 +193,13 @@
   .cat-selector-name .cat-count{font-size:10.5px; font-weight:500; color:var(--muted)}
   .cat-selector-name .cat-code{font-size:10.5px; font-weight:600; color:var(--muted)}
   .cat-selector-orgas{font-size:11px; color:var(--muted); margin-top:2px; line-height:1.4}
+  .cat-level-badge{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:1px 7px;border-radius:99px;border:1px solid currentColor;line-height:1.5}
+  .cat-level-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .cat-level-national{color:#4e80ee;background:color-mix(in srgb,#4e80ee 10%,transparent)}
+  .cat-level-regional{color:#2bb3a3;background:color-mix(in srgb,#2bb3a3 12%,transparent)}
+  .cat-level-club{color:#b98a2e;background:color-mix(in srgb,#b98a2e 14%,transparent)}
+  .cat-level-uec{color:#9a6ff0;background:color-mix(in srgb,#9a6ff0 12%,transparent)}
+  .cat-level-uci{color:#e06b8a;background:color-mix(in srgb,#e06b8a 12%,transparent)}
   .cat-selector-empty{padding:10px; font-size:12.5px; color:var(--muted)}
 
 
@@ -462,7 +481,15 @@
               <select id="catOrgSel" class="cat-selector-orgsel" autocomplete="off">
                 <option value="">Toutes les organisations</option>
               </select>
-              <button type="button" id="catSelectorReset" class="cat-selector-reset" title="Effacer le filtre orga et la recherche">Réinitialiser</button>
+              <label for="catLevelSel">Niveau</label>
+              <select id="catLevelSel" class="cat-selector-orgsel" autocomplete="off" style="max-width:160px">
+                <option value="">Tous les niveaux</option>
+                <option value="national">National</option>
+                <option value="regional">Régional</option>
+                <option value="uec">UEC</option>
+                <option value="uci">UCI</option>
+              </select>
+              <button type="button" id="catSelectorReset" class="cat-selector-reset" title="Effacer le filtre orga, niveau et la recherche">Réinitialiser</button>
             </div>
             <input type="search" id="catSelectorFilter" class="cat-selector-filter" placeholder="Filtrer les catégories…" autocomplete="off" aria-label="Filtrer les catégories">
             <div class="cat-selector-list" id="catSelectorList" role="listbox" aria-label="Catégories"></div>
@@ -552,6 +579,18 @@
     'https://github.com/LudSoc/bmx-race-stats/releases/latest/download/uec-index.json',
     'https://raw.githubusercontent.com/LudSoc/bmx-race-stats/main/uec-index.json',
   ];
+  // Index UCI (Mondiaux BMX Racing, région UCI Sqorz) : mêmes sources, optionnel.
+  const UCI_INDEX_SOURCES = [
+    'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/uci-index.json',
+    'https://github.com/LudSoc/bmx-race-stats/releases/latest/download/uci-index.json',
+    'https://raw.githubusercontent.com/LudSoc/bmx-race-stats/main/uci-index.json',
+  ];
+  // Index Coupe du monde UCI (uci.org — Élite/U23) : mêmes sources, optionnel.
+  const WC_INDEX_SOURCES = [
+    'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/uci-worldcup-index.json',
+    'https://github.com/LudSoc/bmx-race-stats/releases/latest/download/uci-worldcup-index.json',
+    'https://raw.githubusercontent.com/LudSoc/bmx-race-stats/main/uci-worldcup-index.json',
+  ];
 
   // Une « catégorie » = le nom exact de la classe (Sqorz, ou UEC namespacée `uec:`).
   // Aucun regroupement : chaque code a sa propre entrée dans la liste, avec la
@@ -570,15 +609,20 @@
   // --- State ---
   let pilotsIndex = null;
   let uecIndex = null;   // index UEC expansé (optionnel — l'app fonctionne sans)
+  let uciIndex = null;   // index UCI Mondiaux (optionnel) — n'apparaît pas dans les stats niveau (pas de série)
+  let wcIndex = null;    // index Coupe du monde UCI (optionnel)
   let perfFrField = null;  // { classes, medFs } — forces de plateau FR (indice v2, optionnel)
   let perfUecField = null; // idem UEC — silent fallback v1 si absents
   // Clé de classe = même convention que findClassCompetitors et le build (build-field.js).
   const fieldKeyOfEvent = m => `${m.account.accountCode}/${m.event.eventId}/${m.cls?.perpetualClassCode || m.cls?.className || ''}`;
   const fieldCtxFor = m => (m.account && m.account.accountCode === 'uec') ? perfUecField : perfFrField;
-  let currentCatCode = ''; // code exact de la catégorie sélectionnée (`uec:…` pour l'UEC)
+  let currentCatCode = ''; // code exact de la catégorie sélectionnée (`uec:…` pour l'UEC, `uci:…` pour l'UCI)
   let catList = [];        // [{ code, orgs:[…] }] pour l'année sélectionnée
   let orgList = [];        // orgas de l'année (filtre de la liste des catégories)
   let currentOrgFilter = ''; // orga sélectionnée dans le panneau (n'affecte PAS le classement)
+  let currentLevelFilter = ''; // niveau filtré (national/régional/uec/uci) — n'affecte PAS le classement
+  let catRef = null; // categories-ref.json chargé en arrière-plan (optionnel)
+  const REF_LEVEL_LABELS = { national:'National', regional:'Régional', uec:'UEC', uci:'UCI' };
   let globalDataReady = false;
 
   const retryBtn = document.getElementById('retryBtn');
@@ -593,21 +637,33 @@
   // Index UEC : même cache (clé dédiée), piloté par son propre meta.json.
   const UEC_INDEX_CACHE_KEY = 'https://bmx-race.local/cache/uec-index.json';
   const UEC_INDEX_META_URL = 'https://ludsoc.github.io/bmx-race-stats/uec-index.meta.json';
+  // Index UCI (Mondiaux BMX Racing) : même cache, piloté par son propre meta.json.
+  const UCI_INDEX_CACHE_KEY = 'https://bmx-race.local/cache/uci-index.json';
+  const UCI_INDEX_META_URL = 'https://ludsoc.github.io/bmx-race-stats/uci-index.meta.json';
+  // Index Coupe du monde UCI : même cache, piloté par son propre meta.json.
+  const WC_INDEX_CACHE_KEY = 'https://bmx-race.local/cache/uci-worldcup-index.json';
+  const WC_INDEX_META_URL = 'https://ludsoc.github.io/bmx-race-stats/uci-worldcup-index.meta.json';
 
-  // Tous les événements FR + UEC.
+  // Tous les événements FR + UEC + UCI (Mondiaux) + Coupe du monde.
   function allIndexedEvents() {
     const out = [];
     if (pilotsIndex) out.push(...(pilotsIndex.events || []));
     if (uecIndex) out.push(...(uecIndex.events || []));
+    if (uciIndex) out.push(...(uciIndex.events || []));
+    if (wcIndex) out.push(...(wcIndex.events || []));
     return out;
   }
 
-  // Clé de catégorie : le code exact, namespacé `uec:` pour l'UEC. 7 codes JSTiming
-  // (G10–G16) collisionnent avec des perpetualClassCode Sqorz — sans namespace,
-  // les résultats FR et européens seraient mélangés dans une même catégorie.
-  // Aucun code Sqorz ne contient `:` → pas de collision possible.
-  const catSourceKey = (account, code) =>
-    (account && account.accountCode === 'uec') ? 'uec:' + code : code;
+  // Clé de catégorie : le code exact, namespacé `uec:` pour l'UEC et `uci:` pour
+  // l'UCI. Des codes JSTiming (G10–G16) collisionnent avec des perpetualClassCode
+  // Sqorz — sans namespace, les résultats FR et européens seraient mélangés dans
+  // une même catégorie. Aucun code Sqorz ne contient `:` → pas de collision possible.
+  const catSourceKey = (account, code) => {
+    if (account && account.accountCode === 'uec') return 'uec:' + code;
+    if (account && account.accountCode === 'ucibmxworlds') return 'uci:' + code;
+    if (account && account.accountCode === 'uciworldcup') return 'wc:' + code;
+    return code;
+  };
 
   function pilotsCfg() {
     return {
@@ -623,13 +679,54 @@
       onStatus: setStatus, onProgress: setProgress,
     };
   }
+  function uciCfg() {
+    return {
+      metaUrl: UCI_INDEX_META_URL, cacheKey: UCI_INDEX_CACHE_KEY, sources: UCI_INDEX_SOURCES,
+      tag: '[category:uci]', label: 'Index UCI', estimatedSize: 5_000_000,
+      onStatus: setStatus, onProgress: setProgress,
+    };
+  }
+  function wcCfg() {
+    return {
+      metaUrl: WC_INDEX_META_URL, cacheKey: WC_INDEX_CACHE_KEY, sources: WC_INDEX_SOURCES,
+      tag: '[category:wc]', label: 'Index Coupe du monde UCI', estimatedSize: 2_000_000,
+      onStatus: setStatus, onProgress: setProgress,
+    };
+  }
 
   // Fraîcheur par source dans le pied de page (une seule date si identiques).
   function showDataDates() {
     renderDataDates([
       { tag: 'FR', iso: pilotsIndex && pilotsIndex.generated },
       { tag: 'UEC', iso: uecIndex && uecIndex.generated },
+      { tag: 'UCI', iso: uciIndex && uciIndex.generated },
+      { tag: 'WC', iso: wcIndex && wcIndex.generated },
     ]);
+  }
+
+  // --- Référentiel catégories (niveaux) — chargé en arrière-plan, optionnel ---
+  // Pour test local : résolution relative depuis sqorz_tools/category_stats → ../sqorz_stats/
+  function refLevelFor(code) {
+    if (!catRef) return '';
+    let src = 'categories';
+    if (code.startsWith('uec:')) { src = 'categoriesUec'; }
+    else if (code.startsWith('uci:')) { src = 'categoriesUci'; }
+    else if (code.startsWith('wc:')) { src = 'categoriesWorldCup'; }
+    const key = code.indexOf(':') >= 0 ? code.slice(code.indexOf(':') + 1) : code;
+    const entry = catRef[src] && catRef[src][key];
+    return (entry && entry.level) || '';
+  }
+  async function loadCatRef() {
+    try {
+      const r = await fetch('../sqorz_stats/categories-ref.json', { cache: 'no-cache' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      catRef = await r.json();
+    } catch (e) {
+      catRef = null;
+      console.warn('[category] categories-ref.json indisponible (optionnel) :', e && e.message);
+      return;
+    }
+    if (!catSelectorPanel.hidden) renderCatSelectorList(catSelectorFilter.value);
   }
 
   async function loadIndex() {
@@ -643,8 +740,12 @@
       pilotsIndex = await loadIndexCached(pilotsCfg());
       await loadClubNames();
       finishPrimaryLoad();
-      // UEC : arrière-plan — la liste gagne les entrées `uec:…` à son arrivée.
+      // Chargement du référentiel niveaux en arrière-plan (optionnel, badges dans le sélecteur).
+      loadCatRef();
+      // UEC + UCI + WC : arrière-plan — la liste gagne les entrées ns à leur arrivée.
       loadUecInBackground();
+      loadUciInBackground();
+      loadWcInBackground();
     } catch(e) {
       setProgress(0, 0);
       statusEl.classList.remove('loading');
@@ -705,9 +806,36 @@
       uecIndex = null;
     }
     showDataDates();
-    // La liste gagne les entrées `uec:…` (les codes FR sont inchangés → la
-    // sélection courante est préservée). Cas deep-link `?cat=uec:…` arrivé avant
-    // l'UEC : on l'applique maintenant.
+    refreshCatListAfterIndex();
+    loadFieldsInBackground();
+  }
+
+  async function loadUciInBackground() {
+    try {
+      uciIndex = await loadIndexCached({ ...uciCfg(), quiet: true });
+    } catch (e) {
+      console.warn('[category] uci-index.json indisponible :', e && e.message);
+      uciIndex = null;
+    }
+    showDataDates();
+    refreshCatListAfterIndex();
+  }
+
+  async function loadWcInBackground() {
+    try {
+      wcIndex = await loadIndexCached({ ...wcCfg(), quiet: true });
+    } catch (e) {
+      console.warn('[category] uci-worldcup-index.json indisponible :', e && e.message);
+      wcIndex = null;
+    }
+    showDataDates();
+    refreshCatListAfterIndex();
+  }
+
+  // La liste gagne les entrées `uec:…`/`uci:…` (les codes FR sont inchangés → la
+  // sélection courante est préservée). Cas deep-link `?cat=uec:…`/`?cat=uci:…`
+  // arrivé avant l'index correspondant : on l'applique maintenant.
+  function refreshCatListAfterIndex() {
     const keepCat = currentCatCode;
     const urlState = parseUrlState();
     buildCatList();
@@ -721,7 +849,6 @@
     if (currentCatCode) {
       searchRanking();
     }
-    loadFieldsInBackground();
   }
 
   // Forces de plateau (indice v2, optionnel) : relance le classement affiché si chargées.
@@ -777,7 +904,8 @@
   const catSelectorList    = document.getElementById('catSelectorList');
   const catSelectorFilter  = document.getElementById('catSelectorFilter');
   const catSelectorEmpty   = document.getElementById('catSelectorEmpty');
-  const catOrgSel          = document.getElementById('catOrgSel');
+  const catOrgSel = document.getElementById('catOrgSel');
+  const catLevelSel = document.getElementById('catLevelSel');
   const catSelectorReset   = document.getElementById('catSelectorReset');
 
   // --- Sorting state ---
@@ -909,6 +1037,7 @@
     let shown = 0;
     for (const e of catList) {
       if (currentOrgFilter && !e.orgs.includes(currentOrgFilter)) continue;
+      if (currentLevelFilter && refLevelFor(e.code) !== currentLevelFilter) continue;
       if (q && !norm((e.name || '') + ' ' + e.code + ' ' + e.orgs.join(' ')).includes(q)) continue;
       shown++;
       const sel = e.code === currentCatCode;
@@ -919,8 +1048,10 @@
       opt.setAttribute('aria-selected', String(sel));
       opt.dataset.code = e.code;
       const n = e.orgs.length;
+      const lvl = refLevelFor(e.code);
+      const lvlBadge = lvl ? ` <span class="cat-level-badge cat-level-${lvl}">${REF_LEVEL_LABELS[lvl] || lvl}</span>` : '';
       opt.innerHTML =
-        `<span class="cat-selector-name"><span class="cat-fullname">${escape(e.name || e.code)}</span>${e.name ? ` <span class="cat-code">(${escape(e.code)})</span>` : ''} <span class="cat-count">${n} orga${n > 1 ? 's' : ''}</span></span>` +
+        `<span class="cat-selector-name"><span class="cat-fullname">${escape(e.name || e.code)}</span>${e.name ? ` <span class="cat-code">(${escape(e.code)})</span>` : ''} <span class="cat-count">${n} orga${n > 1 ? 's' : ''}</span>${lvlBadge}</span>` +
         (n > 0
           ? `<span class="cat-selector-orgas">${currentOrgFilter ? catOrgsTextHtml(e.code, 6, currentOrgFilter) : escape(catOrgsText(e.code))}</span>`
           : '<span class="cat-selector-orgas" style="font-style:italic">Aucune organisation enregistrée</span>');
@@ -942,6 +1073,8 @@
     catSelectorFilter.value = '';
     catOrgSel.value = '';
     currentOrgFilter = '';
+    catLevelSel.value = '';
+    currentLevelFilter = '';
     renderCatSelectorList('');
     catSelectorPanel.hidden = false;
     catSelectorSummary.setAttribute('aria-expanded', 'true');
@@ -963,9 +1096,15 @@
     currentOrgFilter = catOrgSel.value;
     renderCatSelectorList(catSelectorFilter.value);
   });
+  catLevelSel.addEventListener('change', () => {
+    currentLevelFilter = catLevelSel.value;
+    renderCatSelectorList(catSelectorFilter.value);
+  });
   catSelectorReset.addEventListener('click', () => {
     catOrgSel.value = '';
     currentOrgFilter = '';
+    catLevelSel.value = '';
+    currentLevelFilter = '';
     catSelectorFilter.value = '';
     renderCatSelectorList('');
     catSelectorFilter.focus();

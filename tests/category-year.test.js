@@ -16,13 +16,13 @@ function block(start, indent = '  ') {
 }
 
 const harnessSrc = [
-  'let pilotsIndex = null, uecIndex = null;',
+  'let pilotsIndex = null, uecIndex = null, uciIndex = null, wcIndex = null;',
   'let rankYearSel = { value: "", options: [] };',
   block('function allIndexedEvents() {'),
   block('function dataYears() {'),
   block('function snapYearToData() {'),
 ].join('\n') + `\nreturn { allIndexedEvents, dataYears, snapYearToData,
-  __set: (p, u, value, options) => { pilotsIndex = p; uecIndex = u; rankYearSel = { value, options: options.map(v => ({ value: v })) }; },
+  __set: (p, u, value, options) => { pilotsIndex = p; uecIndex = u; uciIndex = null; wcIndex = null; rankYearSel = { value, options: options.map(v => ({ value: v })) }; },
   __year: () => rankYearSel.value };`;
 const H = new Function(harnessSrc)();
 
