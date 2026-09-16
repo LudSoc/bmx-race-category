@@ -722,6 +722,7 @@
       const r = await fetch('../sqorz_stats/categories-ref.json', { cache: 'no-cache' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       catRef = await r.json();
+      sortCatList();
     } catch (e) {
       catRef = null;
       console.warn('[category] categories-ref.json indisponible (optionnel) :', e && e.message);
@@ -986,10 +987,22 @@
       }
     }
     catList = [...map.values()]
-      .map(e => ({ code: e.code, name: dominantClassName(e.names), orgs: [...e.orgs].sort((a, b) => a.localeCompare(b, 'fr')) }))
-      .sort((a, b) => a.code.localeCompare(b.code, 'fr', { sensitivity: 'base' }));
+      .map(e => ({ code: e.code, name: dominantClassName(e.names), orgs: [...e.orgs].sort((a, b) => a.localeCompare(b, 'fr')) }));
+    sortCatList();
     orgList = [...orgSet].sort((a, b) => a.localeCompare(b, 'fr'));
     rebuildCatOrgSel();
+  }
+
+  // Tri : niveau d'abord (régional → national → UEC → UCI), puis code alphabétique dans le niveau.
+  // Recalculé après le chargement de catRef (niveaux encore inconnus au premier build).
+  function sortCatList() {
+    const lvlOrder = { regional: 0, national: 1, uec: 2, uci: 3 };
+    catList.sort((a, b) => {
+      const la = refLevelFor(a.code) in lvlOrder ? lvlOrder[refLevelFor(a.code)] : 99;
+      const lb = refLevelFor(b.code) in lvlOrder ? lvlOrder[refLevelFor(b.code)] : 99;
+      if (la !== lb) return la - lb;
+      return a.code.localeCompare(b.code, 'fr', { sensitivity: 'base' });
+    });
   }
 
   // Libellé affiché : « Nom complet (CODE) » — l'identité (tri, agrégation, URL) reste le code exact.
