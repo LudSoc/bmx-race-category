@@ -6,15 +6,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%234a7ab5'/><text x='16' y='23' font-family='system-ui' font-size='20' font-weight='800' fill='white' text-anchor='middle'>S</text></svg>">
-<title>BMX-Race · Stats Catégorie</title>
-<meta name="description" content="Classements et statistiques BMX Race par catégorie d'âge : évolutions, podiums et comparatifs entre organisations.">
+<title>BMX-Race · Stats Catégorie — pilotes français</title>
+<meta name="description" content="Classements et statistiques BMX Race des pilotes français par catégorie d'âge : évolutions, podiums et comparatifs entre organisations.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ludsoc.github.io/bmx-race-category/">
-<meta property="og:title" content="BMX-Race · Stats Catégorie">
-<meta property="og:description" content="Classements et statistiques BMX Race par catégorie d'âge : évolutions, podiums et comparatifs entre organisations.">
+<meta property="og:title" content="BMX-Race · Stats Catégorie — pilotes français">
+<meta property="og:description" content="Classements et statistiques BMX Race des pilotes français par catégorie d'âge : évolutions, podiums et comparatifs entre organisations.">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="BMX-Race · Stats Catégorie">
-<meta name="twitter:description" content="Classements et statistiques BMX Race par catégorie d'âge : évolutions, podiums et comparatifs entre organisations.">
+<meta name="twitter:title" content="BMX-Race · Stats Catégorie — pilotes français">
+<meta name="twitter:description" content="Classements et statistiques BMX Race des pilotes français par catégorie d'âge : évolutions, podiums et comparatifs entre organisations.">
 <script>
   (() => {
     const saved = localStorage.getItem('theme');
@@ -260,8 +260,11 @@
   .pilot-search-nav{border:none; background:none; cursor:pointer; color:var(--muted); font-size:17px; font-weight:700; padding:0 2px; line-height:1; min-width:36px; min-height:36px}
   .pilot-search-nav:hover{color:var(--ink)}
   .pilot-search-empty{flex:1 1 100%; font-size:12px; color:var(--muted)}
-  tr.row-highlight td:nth-child(2){background:rgba(59,130,246,.08)}
-  tr.row-current td:nth-child(2){background:rgba(59,130,246,.18); box-shadow:inset 3px 0 0 var(--accent)}
+  table.ranking-table tbody tr.row-highlight td{background:rgba(59,130,246,.08)}
+  table.ranking-table tbody tr.row-current td{background:rgba(59,130,246,.20)}
+  table.ranking-table tbody tr.row-current td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+  table.ranking-table tbody tr.row-pinned td{background:rgba(34,197,94,.16)}
+  table.ranking-table tbody tr.row-pinned td:first-child{box-shadow:inset 3px 0 0 #22c55e}
 
   /* Perf explainer */
   .perf-how{margin:0 0 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); overflow:hidden}
@@ -455,8 +458,8 @@
       </div>
     </div>
     <a class="hub-back" id="hubBackLink" href="#" aria-label="Retour au BMX-Race Hub">← BMX-Race Hub</a>
-    <h1>BMX-Race · Stats Catégorie</h1>
-    <p>Comparez les performances de tous les pilotes d'une catégorie sur une saison — victoires, podiums, régularité — en agrégeant les résultats de toutes les organisations qui courent cette catégorie.</p>
+    <h1>BMX-Race · Stats Catégorie (pilotes français)</h1>
+    <p>Comparez les performances des pilotes français d'une catégorie sur une saison — victoires, podiums, régularité — en agrégeant leurs courses France (Sqorz), Europe UEC et Mondiaux UCI. Un pilote est retenu s'il court au moins une course FR avec un club réel : les étrangers, même vus en course française, sont exclus.</p>
   </div>
 </div>
 
@@ -666,6 +669,61 @@
     return code;
   };
 
+  // --- Pool français (règle sqorz_stats / ranking) : un pilote est français si
+  // ≥1 engagement en course FR avec un club réel (groupName non vide et pas un
+  // code pays). Les étrangers vus en course FR votent avec leur pays ; les codes
+  // pays sont, par construction, les groupements des index UEC / UCI / Coupe du monde.
+  function isFrAccount(account) {
+    const foreign = new Set(['uec', 'ucibmxworlds', 'uciworldcup']);
+    return !(account && foreign.has(account.accountCode));
+  }
+  function poolCountrySet(indexes) {
+    const set = new Set();
+    for (const idx of indexes) {
+      if (!idx) continue;
+      for (const ev of (idx.events || [])) {
+        for (const cls of (ev.classes || [])) {
+          for (const c of (cls.competitors || [])) {
+            const g = String(c.groupName || c.gn || '').trim().toUpperCase();
+            if (g) set.add(g);
+          }
+        }
+      }
+    }
+    return set;
+  }
+  // Clés = noms normalisés, identiques à celles de searchRanking (même norm()).
+  function frenchPoolSet(pilotsIndex, countries) {
+    const set = new Set();
+    if (!pilotsIndex) return set;
+    for (const ev of (pilotsIndex.events || [])) {
+      if (!isFrAccount(ev.account)) continue;
+      for (const cls of (ev.classes || [])) {
+        for (const c of (cls.competitors || [])) {
+          const gn = String(c.groupName || c.gn || '').trim().toUpperCase();
+          if (!gn || countries.has(gn)) continue;
+          const key = norm(((c.firstName || c.fn || '') + ' ' + (c.lastName || c.ln || '')).trim());
+          if (key) set.add(key);
+        }
+      }
+    }
+    return set;
+  }
+  let _poolCountries = null; // cache : groupements des index internationaux
+  let _frenchPool = null;    // cache : clés normalisées des pilotes français
+  function poolCountries() {
+    if (!_poolCountries) _poolCountries = poolCountrySet([uecIndex, uciIndex, wcIndex]);
+    return _poolCountries;
+  }
+  function frenchPool() {
+    if (!_frenchPool) _frenchPool = frenchPoolSet(pilotsIndex, poolCountries());
+    return _frenchPool;
+  }
+  function invalidatePoolCache() {
+    _poolCountries = null;
+    _frenchPool = null;
+  }
+
   function pilotsCfg() {
     return {
       metaUrl: INDEX_META_URL, cacheKey: INDEX_CACHE_KEY, sources: INDEX_SOURCES,
@@ -745,6 +803,7 @@
     try {
       // Index FR : requis — l'UI devient utilisable dès qu'il est prêt.
       pilotsIndex = await loadIndexCached(pilotsCfg());
+      invalidatePoolCache();
       await loadClubNames();
       finishPrimaryLoad();
       // Chargement du référentiel niveaux en arrière-plan (optionnel, badges dans le sélecteur).
@@ -813,6 +872,7 @@
       uecIndex = null;
     }
     showDataDates();
+    invalidatePoolCache();
     refreshCatListAfterIndex();
     loadFieldsInBackground();
   }
@@ -825,6 +885,7 @@
       uciIndex = null;
     }
     showDataDates();
+    invalidatePoolCache();
     refreshCatListAfterIndex();
   }
 
@@ -836,6 +897,7 @@
       wcIndex = null;
     }
     showDataDates();
+    invalidatePoolCache();
     refreshCatListAfterIndex();
   }
 
@@ -925,6 +987,7 @@
   let pilotSearchQuery = ''; // saisie conservée entre les rendus (tri, parité…)
   let pilotSearchPos = 0;    // position dans les matchs (navigation Entrée/‹ ›)
   let pilotSearchCentered = false; // vue centrée sur le match courant (Entrée valide d'abord)
+  let pinnedPilotKeys = new Set(); // pilotes validés (Entrée/‹ ›) : couleur persistante
 
   // Position circulaire dans les matchs (navigation). Testé.
   function wrapSearchPos(pos, n) {
@@ -998,7 +1061,8 @@
     rebuildCatOrgSel();
   }
 
-  // Tri : niveau d'abord (régional → national → UEC → UCI), puis code alphabétique dans le niveau.
+  // Tri : niveau d'abord (régional → national → UEC → UCI), puis nom affiché
+  // alphabétique dans le niveau (repli sur le code si pas de nom).
   // Recalculé après le chargement de catRef (niveaux encore inconnus au premier build).
   function sortCatList() {
     const lvlOrder = { regional: 0, national: 1, uec: 2, uci: 3 };
@@ -1006,6 +1070,8 @@
       const la = refLevelFor(a.code) in lvlOrder ? lvlOrder[refLevelFor(a.code)] : 99;
       const lb = refLevelFor(b.code) in lvlOrder ? lvlOrder[refLevelFor(b.code)] : 99;
       if (la !== lb) return la - lb;
+      const byName = (a.name || a.code).localeCompare(b.name || b.code, 'fr', { sensitivity: 'base' });
+      if (byName !== 0) return byName;
       return a.code.localeCompare(b.code, 'fr', { sensitivity: 'base' });
     });
   }
@@ -1301,6 +1367,7 @@
     pilotSearchQuery = ''; // nouveau contexte (catégorie/année) : recherche réinitialisée
     pilotSearchPos = 0;
     pilotSearchCentered = false;
+    pinnedPilotKeys = new Set(); // nouveau classement : couleurs persistantes effacées
 
     // On agrège toutes les organisations qui courent cette classe exacte
     // (FR + UEC namespacée `uec:…`).
@@ -1344,7 +1411,10 @@
     }
 
     const rows = [];
+    const frenchKeys = frenchPool();
     for (const [key, pilot] of pilotMap) {
+      // Pool français uniquement (même règle que le classement général FR).
+      if (!frenchKeys.has(key)) continue;
       const stats = computeStats(pilot.matches);
       rows.push({
         key,
@@ -1355,6 +1425,14 @@
         matches: pilot.matches,
         perfIndex: computePerfIndex(pilot.matches),
       });
+    }
+
+    if (rows.length === 0) {
+      const yearMsg = year ? ` en ${year}` : '';
+      setStatus(`Aucun pilote français dans « ${label} »${yearMsg}.`);
+      resultsEl.innerHTML = `<div class="card"><div class="empty-state">Aucun pilote français pour « ${escape(label)} »${year ? ` en ${year}` : ''}.</div></div>`;
+      currentRows = [];
+      return;
     }
 
     const yearMsg = year ? ` (${year})` : '';
@@ -1687,6 +1765,7 @@
       const active = norm(searchInput.value).split(' ').filter(Boolean).length > 0;
       resultsEl.querySelectorAll('.ranking-table tbody tr').forEach(tr => {
         tr.classList.toggle('row-highlight', matched.includes(tr));
+        tr.classList.toggle('row-pinned', pinnedPilotKeys.has(tr.dataset.key));
         tr.classList.remove('row-current');
       });
       pilotSearchQuery = searchInput.value;
@@ -1711,6 +1790,8 @@
       const next = stepSearchState(pilotSearchCentered, pilotSearchPos, dir, getMatchedRows().length);
       pilotSearchCentered = next.centered;
       pilotSearchPos = next.pos;
+      const pinned = getMatchedRows()[pilotSearchPos];
+      if (pinned) pinnedPilotKeys.add(pinned.dataset.key); // validation : couleur mémorisée
       filterRows(true);
     };
     searchInput.addEventListener('input', () => { pilotSearchPos = 0; pilotSearchCentered = false; filterRows(); });
@@ -1723,6 +1804,7 @@
       pilotSearchQuery = '';
       pilotSearchPos = 0;
       pilotSearchCentered = false;
+      pinnedPilotKeys = new Set(); // effacer la recherche retire aussi les couleurs
       searchInput.value = '';
       filterRows();
       searchInput.focus();

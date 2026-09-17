@@ -16,6 +16,7 @@ Browse BMX Race rankings and statistics by age category across multiple organiza
 - European (UEC) classes included as separate `uec:…` entries (e.g. `uec:B11`)
 - Each category shows the organizations running that exact class
 - Selecting a category ranks pilots across all those organizations
+- French pilots only (same rule as the main ranking: ≥1 French race with a real club; foreign racers seen in French races are excluded)
 - Year filter
 - Top pilots per category with podium counts
 - Shareable URL (saves selected category and year)
@@ -42,6 +43,7 @@ Consultez les classements et statistiques BMX Race par catégorie d'âge, sur pl
 - Catégories européennes (UEC) incluses comme entrées `uec:…` séparées (ex. `uec:B11`)
 - Chaque catégorie affiche les organisations qui courent cette classe exacte
 - Choisir une catégorie classe les pilotes de toutes ces organisations
+- Pilotes français uniquement (même règle que le classement général : ≥1 course FR avec un club réel, les étrangers vus en course FR sont exclus)
 - Filtre par année
 - Meilleurs pilotes par catégorie avec leur nombre de podiums
 - Indice de performance par pilote (0–1000, même formule que sqorz_stats : rang selon le nombre de partants, force du plateau adverse, constance, chrono transpondeur, DNF gradué par la phase atteinte)
